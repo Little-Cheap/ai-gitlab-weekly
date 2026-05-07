@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI GitLab 周报助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .main-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .form-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .btn-generate {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-generate:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result-section {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .result-header h2 {
+            color: #333;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stat-item strong {
+            color: #667eea;
+        }
+        
+        .report-content {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-height: 300px;
+            white-space: pre-wrap;
+            line-height: 1.8;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn-action {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-action:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 AI GitLab 周报助手</h1>
+            <p>自动从 GitLab 提交记录生成专业周报</p>
+        </div>
+        
+        <div class="main-card">
+            <div class="form-section">
+                <form id="reportForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="gitlabUrl">GitLab 地址</label>
+                            <input type="url" id="gitlabUrl" placeholder="https://gitlab.example.com" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="gitlabToken">GitLab Access Token</label>
+                            <input type="password" id="gitlabToken" placeholder="glpat-xxxxxxxxxxxxx" required>
+                            <small>在 GitLab 设置 → Access Tokens 中创建</small>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="projectIds">项目 ID（多个用逗号分隔）</label>
+                            <input type="text" id="projectIds" placeholder="123, 456, 789" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="authorEmail">作者邮箱（可选）</label>
+                            <input type="email" id="authorEmail" placeholder="your@email.com">
+                            <small>留空则获取所有提交</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="kimiApiKey">Kimi API Key</label>
+                            <input type="password" id="kimiApiKey" placeholder="sk-xxxxxxxxxxxxx" required>
+                            <small>在 platform.moonshot.cn 获取</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="kimiApiUrl">Kimi API URL（可选）</label>
+                            <input type="url" id="kimiApiUrl" placeholder="https://api.kimi.com/coding/v1">
+                            <small>留空使用默认地址</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="startDate">开始日期</label>
+                            <input type="date" id="startDate" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="endDate">结束日期</label>
+                            <input type="date" id="endDate" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-generate" id="generateBtn">
+                        ✨ 生成周报
+                    </button>
+                </form>
+            </div>
+            
+            <div class="result-section">
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>正在生成周报，请稍候...</p>
+                </div>
+                
+                <div id="resultArea" style="display: none;">
+                    <div class="result-header">
+                        <h2>📄 生成的周报</h2>
+                        <div class="stats">
+                            <div class="stat-item">
+                                提交数：<strong id="commitsCount">0</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="report-content" id="reportContent"></div>
+                    
+                    <div class="btn-group">
+                        <button class="btn-action" onclick="copyReport()">📋 复制到剪贴板</button>
+                        <button class="btn-action" onclick="downloadMarkdown()">💾 下载 Markdown</button>
+                        <button class="btn-action" onclick="downloadText()">📝 下载文本</button>
+                    </div>
+                </div>
+                
+                <div id="errorArea" class="error-message" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+            document.getElementById('startDate').value = weekAgo.toISOString().split('T')[0];
+        });
+        
+        document.getElementById('reportForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const loading = document.getElementById('loading');
+            const resultArea = document.getElementById('resultArea');
+            const errorArea = document.getElementById('errorArea');
+            const generateBtn = document.getElementById('generateBtn');
+            
+            loading.style.display = 'block';
+            resultArea.style.display = 'none';
+            errorArea.style.display = 'none';
+            generateBtn.disabled = true;
+            
+            const projectIds = document.getElementById('projectIds').value
+                .split(',')
+                .map(id => id.trim())
+                .filter(id => id);
+            
+            const requestData = {
+                gitlab_url: document.getElementById('gitlabUrl').value,
+                gitlab_token: document.getElementById('gitlabToken').value,
+                project_ids: projectIds,
+                author_email: document.getElementById('authorEmail').value,
+                start_date: document.getElementById('startDate').value,
+                end_date: document.getElementById('endDate').value,
+                kimi_api_key: document.getElementById('kimiApiKey').value,
+                kimi_api_url: document.getElementById('kimiApiUrl').value
+            };
+            
+            try {
+                const response = await fetch('/api/generate-report', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('reportContent').textContent = data.report;
+                    document.getElementById('commitsCount').textContent = data.commits_count;
+                    resultArea.style.display = 'block';
+                } else {
+                    errorArea.textContent = data.message;
+                    errorArea.style.display = 'block';
+                }
+            } catch (error) {
+                errorArea.textContent = '请求失败：' + error.message;
+                errorArea.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+                generateBtn.disabled = false;
+            }
+        });
+        
+        function copyReport() {
+            const report = document.getElementById('reportContent').textContent;
+            navigator.clipboard.writeText(report).then(() => {
+                alert('周报已复制到剪贴板！');
+            });
+        }
+        
+        function downloadMarkdown() {
+            const report = document.getElementById('reportContent').textContent;
+            const blob = new Blob([report], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '周报_' + new Date().toISOString().split('T')[0] + '.md';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function downloadText() {
+            const report = document.getElementById('reportContent').textContent;
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '周报_' + new Date().toISOString().split('T')[0] + '.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
