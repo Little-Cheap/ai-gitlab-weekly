@@ -68,7 +68,7 @@ async def get_project_info(project_id: str) -> Optional[Dict]:
     gitlab_url = config.GITLAB_URL.rstrip('/')
     headers = {"PRIVATE-TOKEN": config.GITLAB_TOKEN}
     
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=300.0) as client:
         try:
             url = f"{gitlab_url}/api/v4/projects/{project_id}"
             response = await client.get(url, headers=headers)

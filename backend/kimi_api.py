@@ -68,7 +68,7 @@ async def generate_weekly_report(commits_text: str, start_date: str, end_date: s
         ]
     }
     
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(timeout=600.0) as client:
         try:
             response = await client.post(
                 api_url,
@@ -93,3 +93,4 @@ async def generate_weekly_report(commits_text: str, start_date: str, end_date: s
         except (KeyError, IndexError) as e:
             print(f"Error parsing Kimi API response: {e}")
             return f"解析响应失败：{str(e)}"
+}]}]}
